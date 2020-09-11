@@ -1,0 +1,55 @@
+#Task 2: Deploy a web server VM instance#
+
+	gcloud beta compute --project=qwiklabs-gcp-00-2b40a8290ef9 instances create bloghost --zone=us-central1-a --machine-type=e2-medium --subnet=default --network-tier=PREMIUM --metadata=startup-script=apt-get\ update$'\n'apt-get\ install\ apache2\ php\ php-mysql\ -y$'\n'service\ apache2\ restart --maintenance-policy=MIGRATE --service-account=947629918470-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/cloud-platform --tags=http-server --image=debian-9-stretch-v20200910 --image-project=debian-cloud --boot-disk-size=10GB --boot-disk-type=pd-standard --boot-disk-device-name=bloghost --reservation-affinity=any
+
+
+	gcloud compute --project=qwiklabs-gcp-00-2b40a8290ef9 firewall-rules create default-allow-http --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:80 --source-ranges=0.0.0.0/0 --target-tags=http-server
+
+
+#Create a Cloud Storage bucket using the gsutil command line#
+	export LOCATION=US
+	gsutil mb -l $LOCATION gs://$DEVSHELL_PROJECT_ID
+	gsutil cp gs://cloud-training/gcpfci/my-excellent-blog.png my-excellent-blog.png
+	gsutil cp my-excellent-blog.png gs://$DEVSHELL_PROJECT_ID/my-excellent-blog.png
+	gsutil acl ch -u allUsers:R gs://$DEVSHELL_PROJECT_ID/my-excellent-blog.png
+
+
+#Task 4: Create the Cloud SQL instance#
+	gcloud sql instances create blog-db --password="admin" --sql-version=MYSQL_5_7" --zone=us-central1-a
+	gcloud sql databases create host-db --instance="blog-db"
+	gcloud sql users create blogdbuser --instance=blog-db -i blog-db --host='%' --password='password'
+	gcloud compute instances list
+	gcloud sql instances patch blog-db --authorized-networks="34.66.179.46/32"
+
+
+#Task 5: Configure an application in a Compute Engine instance to use Cloud SQL#
+#chaning the working directory to the document root of the web server
+	cd /var/www/html
+	#Use the nano text editor to edit a file called index.php:
+	sudo nano index.php
+	#content to be added to the index.php
+	<html>
+	<head><title>Welcome to my excellent blog</title></head>
+	<body>
+	<h1>Welcome to my excellent blog</h1>
+	<?php
+	 $dbserver = "CLOUDSQLIP";
+	$dbuser = "blogdbuser";
+	$dbpassword = "DBPASSWORD";
+	// In a production blog, we would not store the MySQL
+	// password in the document root. Instead, we would store it in a
+	// configuration file elsewhere on the web server VM instance.
+
+$conn = new mysqli($dbserver, $dbuser, $dbpassword);
+
+if (mysqli_connect_error()) {
+        echo ("Database connection failed: " . mysqli_connect_error());
+} else {
+        echo ("Database connection succeeded.");
+}
+?>
+</body></html>
+
+#Restart the web server:
+sudo service apache2 restart
+
