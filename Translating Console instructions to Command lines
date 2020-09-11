@@ -1,0 +1,40 @@
+#task 1; is basically about starting up the project, so we will leave that alone
+
+#Task 2: Confirm that needed APIs are enabled
+#to check if the required API's are enabled for this project, we run the following codes on the command line 
+	gcloud services list --available
+
+
+#Task 3: 	Start a kubernetes engine cluster 
+# to make things easier and reduce latency we export the zone of the kubernetes engine
+	export MY_ZONE=us-central1-a
+# to start a Kubernetes cluster managed by Kubernetes Engine.
+# which we will name webfrontend and configure it to run on 2 nodes
+	gcloud container clusters create webfrontend --zone $MY_ZONE --num-nodes 2
+# to check what version of kubernetes is running 
+	kubectl version
+
+
+
+#Task 4:	Run and deploy a container
+# to launch a single instance of the nginx container
+	kubectl create deploy nginx --image=nginx:1.17.10
+
+#to view the pod running the nginx container:
+	kubectl get pods
+
+#to expose the nginx container to the Internet:
+	kubectl expose deployment nginx --port 80 --type LoadBalance
+
+#to view the new service:
+	kubectl get services
+
+#to scale up the number of pods running on your service:
+	kubectl scale deployment nginx --replicas 3
+
+#to confirm that Kubernetes has updated the number of pods:
+	kubectl get pods
+
+#to confirm that your external IP address has not changed:
+	kubectl get services
+
